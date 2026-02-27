@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore, useThemeStore } from './store/store';
+import { useAuthStore } from './store/store';
 
 // Pages
 import LoginPage from './pages/LoginPage';
@@ -25,10 +25,8 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 };
 
 function App() {
-  const { theme } = useThemeStore();
-  
   return (
-    <div className={theme === 'cyberpunk' ? 'cyberpunk-theme' : 'elegant-theme'}>
+    <div className="min-h-screen bg-surface-dim text-on-surface">
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore, useQuizStore, useThemeStore } from '../store/store';
+import { useAuthStore, useQuizStore } from '../store/store';
 import { questionsAPI, submissionsAPI } from '../services/api';
 
 const SECTION_ORDER = ['C', 'Python', 'Java', 'SQL'];
@@ -9,7 +9,6 @@ const SECTION_LABELS = { C: 'Section 1: C', Python: 'Section 2: Python', Java: '
 export default function QuizPage() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { theme } = useThemeStore();
   const {
     questions,
     currentQuestion,
@@ -259,14 +258,12 @@ export default function QuizPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const isElegant = theme === 'elegant';
-
   if (loading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isElegant ? 'bg-gradient-to-br from-blue-50 to-purple-50' : 'bg-gray-900'}`}>
+      <div className="min-h-screen bg-surface-dim flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-          <p className={isElegant ? 'text-gray-600' : 'text-gray-300'}>Loading questions...</p>
+          <div className="animate-spin rounded-full h-12 w-12 spinner-m3 mx-auto mb-4"></div>
+          <p className="text-on-surface-variant text-sm">Loading questions...</p>
         </div>
       </div>
     );
@@ -274,50 +271,48 @@ export default function QuizPage() {
 
   if (!hasStarted) {
     return (
-      <div className={`min-h-screen flex items-center justify-center px-4 ${isElegant ? 'bg-gradient-to-br from-blue-50 to-purple-50' : 'bg-gray-900 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900'}`}>
-        <div className={`max-w-2xl w-full p-8 rounded-2xl ${isElegant ? 'bg-white shadow-2xl' : 'glass border-2 border-neon-blue shadow-[0_0_30px_rgba(0,240,255,0.3)]'}`}>
-          <h2 className={`text-3xl font-bold mb-6 text-center ${isElegant ? 'text-gray-800' : 'text-neon-blue'}`}>
-            Welcome, {user?.team_name}!
-          </h2>
+      <div className="min-h-screen bg-surface-dim flex items-center justify-center px-4">
+        <div className="max-w-2xl w-full animate-slide-up">
+          <div className="surface-1 rounded-3xl p-8 shadow-elevated-3">
+            <h2 className="text-2xl font-bold mb-6 text-center text-on-surface">
+              Welcome, {user?.team_name}!
+            </h2>
           
-          <div className="mb-8 space-y-4">
-            <div className={`p-4 rounded-lg ${isElegant ? 'bg-blue-50' : 'bg-gray-800 bg-opacity-50 border border-neon-blue'}`}>
-              <h3 className={`font-semibold mb-2 ${isElegant ? 'text-gray-800' : 'text-white'}`}>Quiz Instructions:</h3>
-              <ul className={`list-disc list-inside space-y-2 ${isElegant ? 'text-gray-700' : 'text-gray-300'}`}>
-                <li>You have 1 hour to complete {questions.length} questions</li>
-                <li>Questions are divided into <strong>4 sections</strong> in fixed order</li>
-                <li><strong>Section 1:</strong> C — 12 questions</li>
-                <li><strong>Section 2:</strong> Python — 12 questions</li>
-                <li><strong>Section 3:</strong> Java — 13 questions</li>
-                <li><strong>Section 4:</strong> SQL — 13 questions</li>
-                <li>You must complete each section before moving to the next</li>
-                <li>Once a section is completed, answers are locked</li>
-                <li>Your answers are auto-saved within the active section</li>
-                <li>Final submit is available after all 4 sections are done</li>
-                <li className="text-red-500 font-semibold">Do not refresh the page during the quiz!</li>
-              </ul>
+            <div className="mb-8 space-y-4">
+              <div className="p-5 rounded-2xl bg-primary-container border border-primary/15">
+                <h3 className="font-semibold mb-3 text-primary text-sm">Quiz Instructions</h3>
+                <ul className="list-disc list-inside space-y-2 text-on-surface-variant text-sm">
+                  <li>You have 1 hour to complete {questions.length} questions</li>
+                  <li>Questions are divided into <strong className="text-on-surface">4 sections</strong> in fixed order</li>
+                  <li><strong className="text-on-surface">Section 1:</strong> C — 12 questions</li>
+                  <li><strong className="text-on-surface">Section 2:</strong> Python — 12 questions</li>
+                  <li><strong className="text-on-surface">Section 3:</strong> Java — 13 questions</li>
+                  <li><strong className="text-on-surface">Section 4:</strong> SQL — 13 questions</li>
+                  <li>You must complete each section before moving to the next</li>
+                  <li>Once a section is completed, answers are locked</li>
+                  <li>Your answers are auto-saved within the active section</li>
+                  <li>Final submit is available after all 4 sections are done</li>
+                  <li className="text-error font-medium">Do not refresh the page during the quiz!</li>
+                </ul>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-secondary-container border border-secondary/15">
+                <p className="text-sm text-on-surface-variant">
+                  Total Questions: <span className="font-semibold text-secondary">{questions.length}</span>
+                </p>
+                <p className="text-sm text-on-surface-variant">
+                  Time Limit: <span className="font-semibold text-secondary">1 hour</span>
+                </p>
+              </div>
             </div>
 
-            <div className={`p-4 rounded-lg ${isElegant ? 'bg-purple-50' : 'bg-gray-800 bg-opacity-50 border border-neon-purple'}`}>
-              <p className={`font-semibold ${isElegant ? 'text-gray-800' : 'text-white'}`}>
-                Total Questions: <span className={isElegant ? 'text-purple-600' : 'text-neon-purple'}>{questions.length}</span>
-              </p>
-              <p className={`font-semibold ${isElegant ? 'text-gray-800' : 'text-white'}`}>
-                Time Limit: <span className={isElegant ? 'text-purple-600' : 'text-neon-purple'}>1 hour</span>
-              </p>
-            </div>
+            <button
+              onClick={() => setHasStarted(true)}
+              className="btn-primary w-full py-4 rounded-2xl font-semibold text-lg"
+            >
+              Start Quiz
+            </button>
           </div>
-
-          <button
-            onClick={() => setHasStarted(true)}
-            className={`w-full py-4 rounded-lg font-bold text-lg transition-all duration-300 ${
-              isElegant
-                ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 shadow-lg hover:shadow-xl'
-                : 'bg-neon-blue bg-opacity-20 border-2 border-neon-blue text-neon-blue hover:bg-opacity-30 shadow-[0_0_15px_rgba(0,240,255,0.3)] hover:shadow-[0_0_25px_rgba(0,240,255,0.5)]'
-            }`}
-          >
-            Start Quiz
-          </button>
         </div>
       </div>
     );
@@ -327,19 +322,21 @@ export default function QuizPage() {
   const isCurrentSectionComplete = sections.find(s => s.name === currentSection)?.completed;
 
   return (
-    <div className={`min-h-screen px-4 py-8 ${isElegant ? 'bg-gradient-to-br from-blue-50 to-purple-50' : 'bg-gray-900 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900'}`}>
+    <div className="min-h-screen bg-surface-dim px-4 py-6">
       {/* Header */}
       <div className="max-w-4xl mx-auto mb-4">
-        <div className={`p-4 rounded-lg flex justify-between items-center ${isElegant ? 'bg-white shadow-lg' : 'glass border border-gray-700'}`}>
+        <div className="surface-1 p-4 rounded-2xl shadow-elevated-1 flex justify-between items-center">
           <div>
-            <p className={`font-semibold ${isElegant ? 'text-gray-800' : 'text-white'}`}>{user?.team_name}</p>
-            <p className={`text-sm ${isElegant ? 'text-gray-600' : 'text-gray-400'}`}>
+            <p className="font-semibold text-on-surface">{user?.team_name}</p>
+            <p className="text-xs text-on-surface-variant">
               Total: {totalAnswered}/{questions.length} answered
             </p>
           </div>
           <div className="text-right">
-            <p className={`text-sm ${isElegant ? 'text-gray-600' : 'text-gray-400'}`}>Time Remaining</p>
-            <p className={`text-2xl font-bold ${timeRemaining < 300 ? 'text-red-500' : (isElegant ? 'text-blue-600' : 'text-neon-blue')}`}>
+            <p className="text-xs text-on-surface-variant">Time Remaining</p>
+            <p className={`text-2xl font-bold font-mono ${
+              timeRemaining < 300 ? 'timer-warning timer-critical' : timeRemaining < 600 ? 'timer-warning' : 'text-primary'
+            }`}>
               {formatTime(timeRemaining)}
             </p>
           </div>
@@ -348,7 +345,7 @@ export default function QuizPage() {
 
       {/* Section Navigation Bar */}
       <div className="max-w-4xl mx-auto mb-4">
-        <div className={`p-3 rounded-lg flex gap-2 ${isElegant ? 'bg-white shadow-md' : 'glass border border-gray-700'}`}>
+        <div className="surface-1 p-2 rounded-2xl shadow-elevated-1 flex gap-2">
           {SECTION_ORDER.map((sName, idx) => {
             const sec = sections.find(s => s.name === sName);
             const isActive = sName === currentSection;
@@ -371,16 +368,16 @@ export default function QuizPage() {
                     setCurrentQuestion(start);
                   }
                 }}
-                className={`flex-1 py-2 px-3 rounded-lg text-xs sm:text-sm font-semibold transition-all text-center ${
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 text-center border ${
                   isCompleted
-                    ? (isElegant ? 'bg-green-100 text-green-700 border-2 border-green-400' : 'bg-green-500 bg-opacity-20 text-green-400 border-2 border-green-500')
+                    ? 'section-complete text-success'
                     : isActive
-                    ? (isElegant ? 'bg-blue-500 text-white shadow-md' : 'bg-neon-blue bg-opacity-30 text-neon-blue border-2 border-neon-blue')
-                    : (isElegant ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-800 text-gray-600 cursor-not-allowed border border-gray-700')
+                    ? 'section-active text-primary'
+                    : 'section-locked text-on-surface-variant/40 cursor-not-allowed'
                 }`}
               >
                 <div>{sName}</div>
-                <div className="text-[10px] opacity-75">
+                <div className="text-[10px] opacity-70 mt-0.5">
                   {isCompleted ? '✓ Done' : `${answeredInSection}/${sectionQs.length}`}
                 </div>
               </button>
@@ -391,11 +388,11 @@ export default function QuizPage() {
 
       {/* Section Header */}
       <div className="max-w-4xl mx-auto mb-4">
-        <div className={`p-3 rounded-lg flex justify-between items-center ${isElegant ? 'bg-blue-50 border border-blue-200' : 'bg-gray-800 bg-opacity-60 border border-neon-blue'}`}>
-          <h3 className={`font-bold text-lg ${isElegant ? 'text-blue-700' : 'text-neon-blue'}`}>
+        <div className="surface-2 p-3 rounded-2xl flex justify-between items-center">
+          <h3 className="font-semibold text-primary text-sm">
             {currentSection ? SECTION_LABELS[currentSection] : 'All Sections Complete'}
           </h3>
-          <span className={`text-sm font-semibold ${isElegant ? 'text-blue-600' : 'text-gray-300'}`}>
+          <span className="text-xs font-medium text-on-surface-variant font-mono">
             {currentSection ? `${sectionAnsweredCount} / ${currentSectionQs.length} answered` : ''}
           </span>
         </div>
@@ -404,18 +401,14 @@ export default function QuizPage() {
       {/* All Complete — Show Submit */}
       {allSectionsComplete && (
         <div className="max-w-4xl mx-auto mb-6">
-          <div className={`p-6 rounded-xl text-center ${isElegant ? 'bg-green-50 border-2 border-green-400' : 'bg-green-500 bg-opacity-10 border-2 border-green-500'}`}>
-            <p className={`text-lg font-bold mb-4 ${isElegant ? 'text-green-700' : 'text-green-400'}`}>
+          <div className="surface-1 p-6 rounded-3xl text-center border border-success/20 shadow-glow-success">
+            <p className="text-base font-semibold mb-4 text-success">
               🎉 All sections complete! You can now submit your quiz.
             </p>
             <button
               onClick={() => handleSubmit(false)}
               disabled={submitting}
-              className={`px-10 py-4 rounded-lg font-bold text-lg transition-all duration-300 disabled:opacity-50 ${
-                isElegant
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg'
-                  : 'bg-green-500 bg-opacity-20 border-2 border-green-500 text-green-400 hover:bg-opacity-30 shadow-[0_0_15px_rgba(0,255,0,0.3)]'
-              }`}
+              className="btn-success px-10 py-4 rounded-2xl font-semibold text-lg disabled:opacity-50 disabled:hover:transform-none"
             >
               {submitting ? 'Submitting...' : '🚀 Submit Quiz'}
             </button>
@@ -423,26 +416,22 @@ export default function QuizPage() {
         </div>
       )}
 
-      {/* Question Card (only show if current section is active) */}
+      {/* Question Card */}
       {currentSection && question && (
         <div className="max-w-4xl mx-auto">
-          <div className={`p-8 rounded-2xl ${isElegant ? 'bg-white shadow-2xl' : 'glass border-2 border-neon-blue shadow-[0_0_20px_rgba(0,240,255,0.2)]'}`}>
+          <div className="surface-1 p-8 rounded-3xl shadow-elevated-2 animate-fade-in">
             {/* Question Header */}
             <div className="flex justify-between items-center mb-6">
-              <span className={`px-4 py-2 rounded-lg text-sm font-semibold ${
-                isElegant 
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white'
-                  : 'bg-neon-blue bg-opacity-20 border border-neon-blue text-neon-blue'
-              }`}>
+              <span className="px-3 py-1.5 rounded-xl text-xs font-medium bg-primary-container border border-primary/15 text-primary">
                 {question.category}
               </span>
-              <span className={`text-sm ${isElegant ? 'text-gray-600' : 'text-gray-400'}`}>
+              <span className="text-xs text-on-surface-variant font-mono">
                 Question {localIndex + 1} of {currentSectionQs.length}
               </span>
             </div>
 
             {/* Question Text */}
-            <h3 className={`text-xl font-semibold mb-6 ${isElegant ? 'text-gray-800' : 'text-white'}`}>
+            <h3 className="text-lg font-medium mb-6 text-on-surface leading-relaxed">
               {question.question_text}
             </h3>
 
@@ -453,17 +442,13 @@ export default function QuizPage() {
                   key={option}
                   onClick={() => handleAnswerSelect(option)}
                   disabled={isCurrentSectionComplete}
-                  className={`w-full p-4 rounded-lg text-left transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed ${
+                  className={`w-full p-4 rounded-2xl text-left transition-all duration-200 border disabled:opacity-50 disabled:cursor-not-allowed ${
                     selectedAnswer === option
-                      ? (isElegant
-                          ? 'bg-blue-500 text-white border-2 border-blue-600 shadow-lg'
-                          : 'bg-neon-blue bg-opacity-30 border-2 border-neon-blue text-white shadow-[0_0_15px_rgba(0,240,255,0.4)]')
-                      : (isElegant
-                          ? 'bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 text-gray-800'
-                          : 'bg-gray-800 bg-opacity-50 hover:bg-opacity-70 border-2 border-gray-700 text-gray-300')
+                      ? 'option-selected text-on-surface'
+                      : 'bg-surface-container-high/50 border-outline-variant text-on-surface-variant hover:border-primary/30 hover:bg-primary-container'
                   }`}
                 >
-                  <span className="font-semibold mr-3">{option}.</span>
+                  <span className="font-medium mr-3 text-primary">{option}.</span>
                   {question[`option_${option.toLowerCase()}`]}
                 </button>
               ))}
@@ -474,11 +459,7 @@ export default function QuizPage() {
               <button
                 onClick={handlePrevious}
                 disabled={localIndex === 0}
-                className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isElegant
-                    ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    : 'bg-gray-800 border border-gray-600 text-gray-300 hover:bg-gray-700'
-                }`}
+                className="px-6 py-3 rounded-2xl font-medium transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed surface-2 text-on-surface-variant hover:text-primary"
               >
                 ← Previous
               </button>
@@ -487,12 +468,10 @@ export default function QuizPage() {
                 <button
                   onClick={handleCompleteSection}
                   disabled={completingSection}
-                  className={`px-8 py-3 rounded-lg font-bold transition-all duration-300 disabled:opacity-50 ${
+                  className={`px-8 py-3 rounded-2xl font-semibold transition-all duration-200 disabled:opacity-50 border ${
                     sectionAnsweredCount < currentSectionQs.length
-                      ? (isElegant ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-gray-700 border-2 border-gray-600 text-gray-500 cursor-not-allowed')
-                      : (isElegant
-                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg'
-                        : 'bg-green-500 bg-opacity-20 border-2 border-green-500 text-green-400 hover:bg-opacity-30 shadow-[0_0_15px_rgba(0,255,0,0.3)]')
+                      ? 'border-outline-variant text-on-surface-variant/40 cursor-not-allowed bg-surface-container'
+                      : 'btn-success'
                   }`}
                 >
                   {completingSection ? 'Completing...' : sectionAnsweredCount < currentSectionQs.length ? `Answer all (${sectionAnsweredCount}/${currentSectionQs.length})` : `Complete ${currentSection} ✓`}
@@ -500,11 +479,7 @@ export default function QuizPage() {
               ) : (
                 <button
                   onClick={handleNext}
-                  className={`px-6 py-3 rounded-lg font-semibold transition-all duration-300 ${
-                    isElegant
-                      ? 'bg-blue-500 text-white hover:bg-blue-600'
-                      : 'bg-neon-blue bg-opacity-20 border-2 border-neon-blue text-neon-blue hover:bg-opacity-30'
-                  }`}
+                  className="btn-primary px-6 py-3 rounded-2xl font-medium"
                 >
                   Next →
                 </button>
@@ -512,9 +487,9 @@ export default function QuizPage() {
             </div>
           </div>
 
-          {/* Question Grid (section-scoped) */}
-          <div className={`mt-6 p-6 rounded-xl ${isElegant ? 'bg-white shadow-lg' : 'glass border border-gray-700'}`}>
-            <h4 className={`text-sm font-semibold mb-3 ${isElegant ? 'text-gray-700' : 'text-gray-300'}`}>
+          {/* Question Grid */}
+          <div className="mt-4 p-5 rounded-2xl surface-1 shadow-elevated-1">
+            <h4 className="text-xs font-medium mb-3 text-on-surface-variant">
               {currentSection} Questions
             </h4>
             <div className="grid grid-cols-10 gap-2">
@@ -524,12 +499,12 @@ export default function QuizPage() {
                   <button
                     key={idx}
                     onClick={() => setCurrentQuestion(globalIdx)}
-                    className={`aspect-square rounded-lg text-sm font-semibold transition-all ${
+                    className={`aspect-square rounded-xl text-xs font-medium transition-all duration-200 border ${
                       globalIdx === currentQuestion
-                        ? (isElegant ? 'bg-blue-500 text-white' : 'bg-neon-blue text-gray-900')
+                        ? 'bg-primary/20 text-primary border-primary/40'
                         : answers[q.id] || q.selected_answer
-                        ? (isElegant ? 'bg-green-100 text-green-700' : 'bg-green-500 bg-opacity-30 text-green-300 border border-green-500')
-                        : (isElegant ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-gray-800 text-gray-400 hover:bg-gray-700')
+                        ? 'bg-success/10 text-success border-success/30'
+                        : 'bg-surface-container border-outline-variant text-on-surface-variant/50 hover:border-primary/20'
                     }`}
                   >
                     {idx + 1}

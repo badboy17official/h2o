@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore, useThemeStore } from '../store/store';
+import { useAuthStore } from '../store/store';
 import { authAPI } from '../services/api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuthStore();
-  const { theme } = useThemeStore();
-  const isElegant = theme === 'elegant';
   
   const [formData, setFormData] = useState({
     team_id: '',
@@ -40,35 +38,26 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={`min-h-screen flex items-center justify-center px-4 ${
-      isElegant
-        ? 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
-        : 'bg-gray-900 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900'
-    }`}>
-      <div className="max-w-md w-full">
-        <div className={`rounded-2xl p-8 ${
-          isElegant
-            ? 'bg-white shadow-2xl'
-            : 'glass border-2 border-neon-blue shadow-[0_0_30px_rgba(0,240,255,0.3)]'
-        }`}>
+    <div className="min-h-screen bg-surface-dim flex items-center justify-center px-4">
+      <div className="max-w-md w-full animate-slide-up">
+        <div className="surface-1 rounded-3xl p-8 shadow-elevated-3">
           <div className="text-center mb-8">
-            <h2 className={`text-3xl font-bold ${
-              isElegant
-                ? 'bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent'
-                : 'text-neon-blue drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]'
-            }`}>
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-primary-container border border-primary/20">
+              <svg className="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-on-surface">
               Team Login
             </h2>
-            <p className={`mt-2 ${isElegant ? 'text-gray-600' : 'text-gray-300'}`}>
+            <p className="mt-2 text-sm text-on-surface-variant">
               Enter your credentials to start
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isElegant ? 'text-gray-700' : 'text-gray-300'
-              }`}>
+              <label className="block text-sm font-medium mb-2 text-on-surface-variant">
                 Team ID
               </label>
               <input
@@ -78,19 +67,13 @@ export default function LoginPage() {
                 onChange={handleChange}
                 required
                 autoComplete="off"
-                className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors ${
-                  isElegant
-                    ? 'border-gray-200 focus:border-blue-500'
-                    : 'bg-gray-800 bg-opacity-50 border-neon-blue focus:border-neon-purple text-white placeholder-gray-500'
-                }`}
+                className="input-m3 w-full px-4 py-3 rounded-2xl"
                 placeholder="Enter your team ID"
               />
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-2 ${
-                isElegant ? 'text-gray-700' : 'text-gray-300'
-              }`}>
+              <label className="block text-sm font-medium mb-2 text-on-surface-variant">
                 Password
               </label>
               <input
@@ -100,21 +83,13 @@ export default function LoginPage() {
                 onChange={handleChange}
                 required
                 autoComplete="off"
-                className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none transition-colors ${
-                  isElegant
-                    ? 'border-gray-200 focus:border-blue-500'
-                    : 'bg-gray-800 bg-opacity-50 border-neon-blue focus:border-neon-purple text-white placeholder-gray-500'
-                }`}
+                className="input-m3 w-full px-4 py-3 rounded-2xl"
                 placeholder="Enter your password"
               />
             </div>
 
             {error && (
-              <div className={`px-4 py-3 rounded-lg border-2 ${
-                isElegant
-                  ? 'bg-red-50 border-red-200 text-red-700'
-                  : 'bg-red-900 bg-opacity-50 border-red-500 text-red-200'
-              }`}>
+              <div className="px-4 py-3 rounded-2xl bg-error-container border border-error/20 text-error text-sm">
                 {error}
               </div>
             )}
@@ -122,11 +97,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
-                isElegant
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 shadow-lg hover:shadow-xl'
-                  : 'bg-neon-blue bg-opacity-20 border-2 border-neon-blue text-neon-blue hover:bg-opacity-30 shadow-[0_0_15px_rgba(0,240,255,0.3)] hover:shadow-[0_0_25px_rgba(0,240,255,0.5)]'
-              }`}
+              className="btn-primary w-full py-3 rounded-2xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:transform-none"
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
@@ -135,9 +106,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <button
               onClick={() => navigate('/')}
-              className={`transition-colors ${
-                isElegant ? 'text-gray-600 hover:text-gray-800' : 'text-gray-400 hover:text-white'
-              }`}
+              className="text-on-surface-variant hover:text-primary transition-colors duration-200 text-sm"
             >
               ← Back to Home
             </button>

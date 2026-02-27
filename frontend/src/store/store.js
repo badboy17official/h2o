@@ -36,7 +36,7 @@ export const useAuthStore = create((set) => ({
 }));
 
 export const useThemeStore = create((set) => ({
-  theme: 'elegant', // 'elegant' or 'cyberpunk'
+  theme: 'cyberpunk', // 'elegant' or 'cyberpunk'
   toggleTheme: () => set((state) => ({ 
     theme: state.theme === 'elegant' ? 'cyberpunk' : 'elegant' 
   })),

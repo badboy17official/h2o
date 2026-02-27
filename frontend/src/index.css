@@ -2,51 +2,164 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== BASE ===== */
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
   font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
 }
 
 body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  background: #121212;
+  color: #e6e1e5;
 }
 
-/* Prevent page refresh warning */
-.no-refresh::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: -1;
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ===== M3 SURFACE CARD ===== */
+.surface-1 {
+  background: #1e1e2f;
+  border: 1px solid rgba(255,255,255,0.06);
 }
 
-/* Glassmorphism effect */
+.surface-2 {
+  background: #222238;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.surface-3 {
+  background: #25253a;
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+/* ===== GLASS (light backdrop-blur) ===== */
 .glass {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(30, 30, 47, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
+/* ===== M3 INPUT ===== */
+.input-m3 {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #e6e1e5;
+  transition: all 0.2s ease;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+.input-m3:focus {
+  border-color: #00cfff;
+  box-shadow: 0 0 0 2px rgba(0, 207, 255, 0.15);
+  outline: none;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(100, 100, 100, 0.5);
-  border-radius: 4px;
+.input-m3::placeholder {
+  color: rgba(255,255,255,0.3);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 100, 100, 0.7);
+/* ===== M3 BUTTON ===== */
+.btn-primary {
+  background: rgba(0, 207, 255, 0.12);
+  border: 1px solid rgba(0, 207, 255, 0.3);
+  color: #00cfff;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: rgba(0, 207, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 207, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: rgba(124, 77, 255, 0.12);
+  border: 1px solid rgba(124, 77, 255, 0.3);
+  color: #7c4dff;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(124, 77, 255, 0.2);
+  box-shadow: 0 0 20px rgba(124, 77, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.btn-success {
+  background: rgba(0, 255, 157, 0.12);
+  border: 1px solid rgba(0, 255, 157, 0.3);
+  color: #00ff9d;
+  transition: all 0.2s ease;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: rgba(0, 255, 157, 0.2);
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.12);
+  transform: translateY(-1px);
+}
+
+/* ===== TIMER ===== */
+.timer-warning {
+  color: #ff3d71 !important;
+}
+
+.timer-critical {
+  animation: timer-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ===== RANK BADGES ===== */
+.rank-gold { color: #ffd700; }
+.rank-silver { color: #c0c0c0; }
+.rank-bronze { color: #cd7f32; }
+
+/* ===== SPINNER ===== */
+.spinner-m3 {
+  border: 3px solid rgba(255,255,255,0.08);
+  border-top-color: #00cfff;
+}
+
+/* ===== SECTION STATES ===== */
+.section-complete {
+  background: rgba(0, 255, 157, 0.08);
+  border-color: rgba(0, 255, 157, 0.3);
+}
+
+.section-active {
+  background: rgba(0, 207, 255, 0.08);
+  border-color: rgba(0, 207, 255, 0.3);
+  box-shadow: 0 0 12px rgba(0, 207, 255, 0.08);
+}
+
+.section-locked {
+  background: rgba(255,255,255,0.02);
+  border-color: rgba(255,255,255,0.06);
+}
+
+/* ===== OPTION SELECTED ===== */
+.option-selected {
+  background: rgba(0, 207, 255, 0.1);
+  border-color: #00cfff !important;
 }
