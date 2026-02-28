@@ -95,8 +95,8 @@ async function assignQuestionsToTeam(teamId) {
       sectionParams
     );
 
-    // NOTE: quiz_started_at is set when user explicitly clicks "Start Quiz"
-    // via POST /submissions/start — not here during question assignment
+    // NOTE: quiz_started_at is initialized only via POST /submissions/start
+    // (never during assignment)
 
     await client.query('COMMIT');
     console.log(`✅ Assigned ${orderedQuestions.length} questions to team ${teamId} (sectioned)`);
@@ -118,19 +118,20 @@ router.get('/', authenticateToken, async (req, res) => {
     // Ensure questions are assigned
     await assignQuestionsToTeam(teamId);
 
-    // Get server-side timer info
+    // Get server-side timer info (computed in DB to avoid timezone parsing drift)
     const teamInfo = await pool.query(
-      'SELECT quiz_started_at FROM teams WHERE id = $1',
-      [teamId]
+      `SELECT
+         quiz_started_at,
+         CASE
+           WHEN quiz_started_at IS NULL THEN $2
+           ELSE GREATEST(0, $2 - FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - quiz_started_at)))::int)
+         END AS server_time_remaining
+       FROM teams
+       WHERE id = $1`,
+      [teamId, 60 * 60]
     );
-    const quizStartedAt = teamInfo.rows[0]?.quiz_started_at;
-    const QUIZ_DURATION = 60 * 60; // 60 minutes in seconds
-    let serverTimeRemaining = QUIZ_DURATION;
-
-    if (quizStartedAt) {
-      const elapsed = Math.floor((Date.now() - new Date(quizStartedAt).getTime()) / 1000);
-      serverTimeRemaining = Math.max(0, QUIZ_DURATION - elapsed);
-    }
+    const quizStartedAt = teamInfo.rows[0]?.quiz_started_at || null;
+    const serverTimeRemaining = parseInt(teamInfo.rows[0]?.server_time_remaining ?? 60 * 60);
 
     // Fetch assigned questions with their order and section
     const result = await pool.query(

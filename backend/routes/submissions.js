@@ -15,24 +15,31 @@ const SECTION_ORDER = ['C', 'Python', 'Java', 'SQL'];
 // Helper: check if quiz time has expired server-side
 async function checkQuizTimeExpired(teamId) {
   const result = await pool.query(
-    'SELECT quiz_started_at FROM teams WHERE id = $1',
-    [teamId]
+    `SELECT
+       CASE
+         WHEN quiz_started_at IS NULL THEN FALSE
+         ELSE FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - quiz_started_at)))::int > $2
+       END AS is_expired
+     FROM teams
+     WHERE id = $1`,
+    [teamId, QUIZ_DURATION + GRACE_PERIOD]
   );
-  const startedAt = result.rows[0]?.quiz_started_at;
-  if (!startedAt) return false; // quiz hasn't started
-  const elapsed = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
-  return elapsed > (QUIZ_DURATION + GRACE_PERIOD);
+  return !!result.rows[0]?.is_expired;
 }
 
 // Helper: calculate server-side time taken
 async function calculateTimeTaken(teamId) {
   const result = await pool.query(
-    'SELECT quiz_started_at FROM teams WHERE id = $1',
+    `SELECT
+       CASE
+         WHEN quiz_started_at IS NULL THEN NULL
+         ELSE FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - quiz_started_at)))::int
+       END AS time_taken
+     FROM teams
+     WHERE id = $1`,
     [teamId]
   );
-  const startedAt = result.rows[0]?.quiz_started_at;
-  if (!startedAt) return null;
-  return Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
+  return result.rows[0]?.time_taken ?? null;
 }
 
 // Save/Update answer for a question
@@ -274,6 +281,21 @@ router.get('/status', authenticateToken, async (req, res) => {
   try {
     const teamId = req.user.id;
 
+    // Fetch timer state (used by frontend to decide whether to show Start Quiz screen)
+    const teamResult = await pool.query(
+      `SELECT
+         quiz_started_at,
+         CASE
+           WHEN quiz_started_at IS NULL THEN $2
+           ELSE GREATEST(0, $2 - FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - quiz_started_at)))::int)
+         END AS server_time_remaining
+       FROM teams
+       WHERE id = $1`,
+      [teamId, QUIZ_DURATION]
+    );
+    const quizStartedAt = teamResult.rows[0]?.quiz_started_at || null;
+    const serverTimeRemaining = parseInt(teamResult.rows[0]?.server_time_remaining ?? QUIZ_DURATION);
+
     const result = await pool.query(
       `SELECT 
         r.total_score,
@@ -295,7 +317,9 @@ router.get('/status', authenticateToken, async (req, res) => {
 
       return res.json({
         submitted: false,
-        answered_count: parseInt(answeredResult.rows[0].count)
+        answered_count: parseInt(answeredResult.rows[0].count),
+        quizStartedAt,
+        serverTimeRemaining
       });
     }
 
@@ -306,7 +330,9 @@ router.get('/status', authenticateToken, async (req, res) => {
       total: data.total_questions,
       time_taken: data.time_taken,
       submitted_at: data.submitted_at,
-      answered_count: parseInt(data.answered_count)
+      answered_count: parseInt(data.answered_count),
+      quizStartedAt,
+      serverTimeRemaining
     });
 
   } catch (error) {
@@ -315,9 +341,13 @@ router.get('/status', authenticateToken, async (req, res) => {
   }
 });
 
-// Start quiz — sets quiz_started_at server-side (only on first call)
+// Start quiz endpoint: initializes timer exactly once per team.
 router.post('/start', authenticateToken, async (req, res) => {
   try {
+    if (req.user.role !== 'team') {
+      return res.status(403).json({ error: 'Team access required' });
+    }
+
     const teamId = req.user.id;
 
     // Check if already submitted
@@ -329,23 +359,32 @@ router.post('/start', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Quiz already submitted' });
     }
 
-    // Set quiz_started_at only if not already set
+    // Initialize timer if not already started
     await pool.query(
       'UPDATE teams SET quiz_started_at = CURRENT_TIMESTAMP WHERE id = $1 AND quiz_started_at IS NULL',
       [teamId]
     );
 
-    // Get current quiz_started_at
+    // Read current timer state
     const team = await pool.query(
       'SELECT quiz_started_at FROM teams WHERE id = $1',
       [teamId]
     );
-    const startedAt = team.rows[0]?.quiz_started_at;
-    const elapsed = Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
-    const serverTimeRemaining = Math.max(0, QUIZ_DURATION - elapsed);
+    const startedAt = team.rows[0]?.quiz_started_at || null;
+    const remainingResult = await pool.query(
+      `SELECT
+         CASE
+           WHEN quiz_started_at IS NULL THEN $2
+           ELSE GREATEST(0, $2 - FLOOR(EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - quiz_started_at)))::int)
+         END AS server_time_remaining
+       FROM teams
+       WHERE id = $1`,
+      [teamId, QUIZ_DURATION]
+    );
+    const serverTimeRemaining = parseInt(remainingResult.rows[0]?.server_time_remaining ?? QUIZ_DURATION);
 
     res.json({
-      quiz_started_at: startedAt,
+      quizStartedAt: startedAt,
       serverTimeRemaining
     });
 

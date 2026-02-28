@@ -27,7 +27,6 @@ export default function QuizPage() {
   } = useQuizStore();
 
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [completingSection, setCompletingSection] = useState(false);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
@@ -158,9 +157,40 @@ export default function QuizPage() {
     };
   }, [hasStarted, logActivity]);
 
-  // Fetch questions on mount
+  const fetchQuestionsData = useCallback(async () => {
+    const response = await questionsAPI.getAll();
+    setQuestions(response.data.questions || []);
+
+    if (response.data.sections) {
+      setSections(response.data.sections);
+    }
+
+    if (response.data.serverTimeRemaining !== undefined) {
+      const { setTimeRemaining } = useQuizStore.getState();
+      setTimeRemaining(response.data.serverTimeRemaining);
+    }
+
+    if (response.data.sections) {
+      const activeSection = SECTION_ORDER.find(name => {
+        const s = response.data.sections.find(sec => sec.name === name);
+        return !s || !s.completed;
+      });
+      if (activeSection) {
+        let startIdx = 0;
+        for (const s of SECTION_ORDER) {
+          if (s === activeSection) break;
+          startIdx += (response.data.questions || []).filter(q => q.section === s).length;
+        }
+        setCurrentQuestion(startIdx);
+      }
+    }
+
+    return response.data;
+  }, [setQuestions, setSections, setCurrentQuestion]);
+
+  // Initialize quiz state on mount
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const initializeQuiz = async () => {
       try {
         const statusResponse = await submissionsAPI.getStatus();
         if (statusResponse.data.submitted) {
@@ -168,56 +198,43 @@ export default function QuizPage() {
           return;
         }
 
-        const response = await questionsAPI.getAll();
-        setQuestions(response.data.questions);
-        
-        if (response.data.sections) {
-          setSections(response.data.sections);
+        const { setTimeRemaining } = useQuizStore.getState();
+        if (statusResponse.data.serverTimeRemaining !== undefined) {
+          setTimeRemaining(statusResponse.data.serverTimeRemaining);
         }
 
-        if (response.data.serverTimeRemaining !== undefined) {
-          const { setTimeRemaining } = useQuizStore.getState();
-          setTimeRemaining(response.data.serverTimeRemaining);
+        // If quiz has NOT started, show Start screen first (no question fetch yet)
+        if (!statusResponse.data.quizStartedAt) {
+          setHasStarted(false);
+          setLoading(false);
+          return;
         }
 
-        // Check if quiz was already started (quiz_started_at exists)
-        if (response.data.quizStartedAt) {
-          // Quiz was previously started — check if expired
-          if (response.data.serverTimeRemaining <= 0) {
-            setExpired(true);
-          } else {
-            // Timer is still running — skip pre-start screen
-            setHasStarted(true);
-          }
+        // Quiz already started: continue session
+        if ((statusResponse.data.serverTimeRemaining ?? 0) <= 0) {
+          setExpired(true);
+          setLoading(false);
+          return;
         }
-        // If quizStartedAt is null, show pre-start screen (hasStarted stays false)
 
-        if (response.data.sections) {
-          const activeSection = SECTION_ORDER.find(name => {
-            const s = response.data.sections.find(sec => sec.name === name);
-            return !s || !s.completed;
-          });
-          if (activeSection) {
-            let startIdx = 0;
-            for (const s of SECTION_ORDER) {
-              if (s === activeSection) break;
-              startIdx += response.data.questions.filter(q => q.section === s).length;
-            }
-            setCurrentQuestion(startIdx);
-          }
-        }
-        
+        setHasStarted(true);
+        await fetchQuestionsData();
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching questions:', error);
-        const msg = error.response?.data?.error || error.message || 'Failed to load questions';
-        setLoadError(msg);
+        console.error('Error initializing quiz:', error);
         setLoading(false);
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+        } else {
+          alert('Failed to load quiz. Please refresh.');
+        }
       }
     };
 
-    fetchQuestions();
-  }, [setQuestions, setSections, navigate]);
+    initializeQuiz();
+  }, [navigate, fetchQuestionsData]);
 
   // Timer countdown
   useEffect(() => {
@@ -363,18 +380,23 @@ export default function QuizPage() {
 
   const handleStartQuiz = async () => {
     try {
+      setLoading(true);
       const response = await submissionsAPI.startQuiz();
       const { setTimeRemaining } = useQuizStore.getState();
       setTimeRemaining(response.data.serverTimeRemaining);
       if (response.data.serverTimeRemaining <= 0) {
         setExpired(true);
+        setLoading(false);
       } else {
         setHasStarted(true);
+        await fetchQuestionsData();
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error starting quiz:', error);
       const msg = error.response?.data?.error || 'Failed to start quiz';
       alert(msg);
+      setLoading(false);
     }
   };
 
@@ -384,45 +406,6 @@ export default function QuizPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 spinner-m3 mx-auto mb-4"></div>
           <p className="text-on-surface-variant text-sm">Loading questions...</p>
-          <button
-            onClick={handleLogout}
-            className="mt-6 px-6 py-2 rounded-xl text-xs font-medium bg-error-container text-error border border-error/20 hover:bg-error/20 transition-all duration-200"
-          >
-            Cancel &amp; Logout
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ===== ERROR SCREEN =====
-  if (loadError) {
-    return (
-      <div className="min-h-screen bg-surface-dim flex items-center justify-center px-4">
-        <div className="max-w-md w-full animate-slide-up">
-          <div className="surface-1 rounded-3xl p-8 shadow-elevated-3 text-center">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5 bg-error-container border border-error/20">
-              <svg className="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold text-error mb-2">Failed to Load Quiz</h2>
-            <p className="text-on-surface-variant text-sm mb-6">{loadError}</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => window.location.reload()}
-                className="flex-1 btn-primary py-3 rounded-2xl font-semibold"
-              >
-                Retry
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex-1 py-3 rounded-2xl font-medium surface-2 text-on-surface-variant hover:text-error border border-outline-variant hover:border-error/30 transition-all duration-200"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     );
@@ -472,7 +455,7 @@ export default function QuizPage() {
               <div className="p-5 rounded-2xl bg-primary-container border border-primary/15">
                 <h3 className="font-semibold mb-3 text-primary text-sm">Quiz Instructions</h3>
                 <ul className="list-disc list-inside space-y-2 text-on-surface-variant text-sm">
-                  <li>You have 1 hour to complete {questions.length} questions</li>
+                  <li>You have 1 hour to complete {questions.length || 50} questions</li>
                   <li>Questions are divided into <strong className="text-on-surface">4 sections</strong> in fixed order</li>
                   <li><strong className="text-on-surface">Section 1:</strong> C — 12 questions</li>
                   <li><strong className="text-on-surface">Section 2:</strong> Python — 12 questions</li>
@@ -489,7 +472,7 @@ export default function QuizPage() {
 
               <div className="p-4 rounded-2xl bg-secondary-container border border-secondary/15">
                 <p className="text-sm text-on-surface-variant">
-                  Total Questions: <span className="font-semibold text-secondary">{questions.length}</span>
+                  Total Questions: <span className="font-semibold text-secondary">{questions.length || 50}</span>
                 </p>
                 <p className="text-sm text-on-surface-variant">
                   Time Limit: <span className="font-semibold text-secondary">1 hour</span>
