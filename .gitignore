@@ -32,3 +32,4 @@ uploads/
 # Database
 *.db
 *.sqlite
+backend/exports/*.docx
